@@ -36,7 +36,7 @@
 #define PCB_V2 2
 
 // Setup the OpenBot version (DIY,PCB_V1,PCB_V2)
-#define OPENBOT DIY
+#define OPENBOT PCB_V2
 
 // Enable/Disable no phone mode (1,0)
 // In no phone mode:
