@@ -246,7 +246,7 @@ void setup()
 //------------------------------------------------------//
 
 void loop() {
-  
+
   #if HAS_VOLTAGE_DIVIDER
     //Measure voltage
     vin_array[vin_counter%VIN_ARR_SZ] = analogRead(PIN_VIN);
@@ -288,7 +288,7 @@ void loop() {
       indicator_timeout = millis() + INDICATOR_INTERVAL;
     }
   #endif
-  
+
   #if (NO_PHONE_MODE)
     if (millis() > turn_direction_timeout)
     {
@@ -346,7 +346,7 @@ void loop() {
       if (ctrl_right > 0) ctrl_right = 0;
     }
   #endif
-  
+
   update_left_motors();
   update_right_motors();
 }
@@ -358,12 +358,12 @@ void loop() {
 
 void update_left_motors() {
     if (ctrl_left < 0) {
-      analogWrite(PIN_PWM_L1,-ctrl_left);
-      analogWrite(PIN_PWM_L2,0);
+      analogWrite(PIN_PWM_L1,0);
+      analogWrite(PIN_PWM_L2,-ctrl_left);
     }
     else if (ctrl_left > 0) {
-      analogWrite(PIN_PWM_L1,0);
-      analogWrite(PIN_PWM_L2,ctrl_left);
+      analogWrite(PIN_PWM_L1,ctrl_left);
+      analogWrite(PIN_PWM_L2, 0);
     }
     else { //Motor brake
       analogWrite(PIN_PWM_L1,255);
@@ -373,12 +373,12 @@ void update_left_motors() {
 
 void update_right_motors() {
     if (ctrl_right < 0) {
-      analogWrite(PIN_PWM_R1,-ctrl_right);
-      analogWrite(PIN_PWM_R2,0);
+      analogWrite(PIN_PWM_R1,0);
+      analogWrite(PIN_PWM_R2,-ctrl_right);
     }
     else if (ctrl_right > 0) {
-      analogWrite(PIN_PWM_R1,0);
-      analogWrite(PIN_PWM_R2,ctrl_right);
+      analogWrite(PIN_PWM_R1,ctrl_right);
+      analogWrite(PIN_PWM_R2,0);
     }
     else { //Motor brake
       analogWrite(PIN_PWM_R1,255);
@@ -409,7 +409,7 @@ void send_vehicle_data() {
   counter_left = 0;
   int ticks_right = counter_right;
   counter_right = 0;
-  
+
   #if (NO_PHONE_MODE || HAS_OLED)
     float rpm_factor = 60.0*(1000.0/SEND_INTERVAL)/(DISK_HOLES);
     float rpm_left = ticks_left*rpm_factor;
@@ -430,14 +430,14 @@ void send_vehicle_data() {
     Serial.print(",");
     Serial.print(distance_estimate);
     Serial.println();
-  #endif 
-  
+  #endif
+
   #if HAS_OLED
     // Set display information
     drawString(
-      "Voltage:    " + String(voltage_value,2), 
-      "Left RPM:  " + String(rpm_left,0), 
-      "Right RPM: " + String(rpm_right, 0), 
+      "Voltage:    " + String(voltage_value,2),
+      "Left RPM:  " + String(rpm_left,0),
+      "Right RPM: " + String(rpm_right, 0),
       "Distance:   " + String(distance_estimate));
   #endif
 }
@@ -447,8 +447,8 @@ void send_vehicle_data() {
     unsigned long array_sum = 0;
     unsigned int array_size = min(VIN_ARR_SZ,vin_counter);
     for(unsigned int index = 0; index < array_size; index++)
-    { 
-      array_sum += vin_array[index]; 
+    {
+      array_sum += vin_array[index];
     }
     return float(array_sum)/array_size/ADC_MAX*VREF*VOLTAGE_DIVIDER_FACTOR;
   }
@@ -495,7 +495,7 @@ void drawString(String line1, String line2, String line3, String line4) {
   display.println(line3);
   display.setCursor(1,24);
   // show text
-  display.println(line4);    
+  display.println(line4);
   display.display();
 }
 #endif
@@ -524,17 +524,17 @@ void drawString(String line1, String line2, String line3, String line4) {
   // ISR: Increment speed sensor counter (right)
   void update_speed_left() {
     if (ctrl_left < 0) {
-      counter_left--; 
+      counter_left--;
     }
     else if (ctrl_left > 0) {
       counter_left++;
     }
   }
-  
+
   // ISR: Increment speed sensor counter (right)
   void update_speed_right() {
     if (ctrl_right < 0) {
-      counter_right--; 
+      counter_right--;
     }
     else if (ctrl_right > 0){
       counter_right++;
