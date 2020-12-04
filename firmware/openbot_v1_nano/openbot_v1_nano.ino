@@ -40,22 +40,22 @@
 //------------------------------------------------------//
 
 // Setup the OpenBot version (DIY,PCB_V1,PCB_V2)
-#define OPENBOT DIY
+#define OPENBOT PCB_V1
 
 // Enable/Disable voltage divider (1,0)
 #define HAS_VOLTAGE_DIVIDER 0
 
 // Enable/Disable indicators (1,0)
-#define HAS_INDICATORS 0
+#define HAS_INDICATORS 1
 
 // Enable/Disable speed sensors (1,0)
-#define HAS_SPEED_SENSORS 0
+#define HAS_SPEED_SENSORS 1
 
 // Enable/Disable sonar (1,0)
-#define HAS_SONAR 0
+#define HAS_SONAR 1
 
 // Enable/Disable median filter for sonar measurements (1,0)
-#define USE_MEDIAN 0
+#define USE_MEDIAN 1
 
 // Enable/Disable OLED (1,0)
 #define HAS_OLED 0
