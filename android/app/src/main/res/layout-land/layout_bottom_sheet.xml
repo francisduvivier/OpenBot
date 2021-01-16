@@ -287,8 +287,8 @@
             android:text="@string/resolution"
             android:textColor="@android:color/black" />
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/camera_toggle_switch"
+        <Spinner
+            android:id="@+id/camera_spinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
