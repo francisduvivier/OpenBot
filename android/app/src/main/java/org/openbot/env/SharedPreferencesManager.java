@@ -24,7 +24,7 @@ public class SharedPreferencesManager {
   private static final String DEVICE = "DEVICE";
   private static final int DEFAULT_NUM_THREAD = 1;
   private static final String NUM_THREAD = "NUM_THREAD";
-  private static final String CAMERA_SWITCH = "CAMERA_SWITCH";
+  private static final String CAMERA_ID = "CAMERA_ID";
   private static final String SHEET_EXPANDED = "SHEET_EXPANDED";
 
   private final SharedPreferences preferences;
@@ -68,8 +68,8 @@ public class SharedPreferencesManager {
     return preferences.getInt(NUM_THREAD, DEFAULT_NUM_THREAD);
   }
 
-  public boolean getCameraSwitch() {
-    return preferences.getBoolean(CAMERA_SWITCH, false);
+  public String getCameraId() {
+    return preferences.getString(CAMERA_ID, null);
   }
 
   public boolean getSheetExpanded() {
@@ -108,8 +108,8 @@ public class SharedPreferencesManager {
     preferences.edit().putInt(NUM_THREAD, numThreads).apply();
   }
 
-  public void setCameraSwitch(boolean isChecked) {
-    preferences.edit().putBoolean(CAMERA_SWITCH, isChecked).apply();
+  public void setCamera(String cameraId) {
+    preferences.edit().putString(CAMERA_ID, cameraId).apply();
   }
 
   public void setSheetExpanded(boolean expanded) {

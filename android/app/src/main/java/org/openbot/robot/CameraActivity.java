@@ -66,6 +66,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.appcompat.widget.Toolbar;
+import androidx.camera.core.CameraSelector;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -73,8 +74,11 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
@@ -118,7 +122,7 @@ public abstract class CameraActivity extends AppCompatActivity
   private static final String PERMISSION_BLUETOOTH = Manifest.permission.BLUETOOTH;
 
   private static Context context;
-  private int cameraSelection = CameraCharacteristics.LENS_FACING_BACK;
+  private String cameraSelection = null;
   protected int previewWidth = 0;
   protected int previewHeight = 0;
   private final boolean debug = false;
@@ -138,8 +142,7 @@ public abstract class CameraActivity extends AppCompatActivity
 
   protected SwitchCompat connectionSwitchCompat,
       networkSwitchCompat,
-      logSwitchCompat,
-      cameraSwitchCompat;
+      logSwitchCompat;
   protected TextView frameValueTextView,
       cropValueTextView,
       inferenceTimeTextView,
@@ -152,7 +155,8 @@ public abstract class CameraActivity extends AppCompatActivity
       controlModeSpinner,
       driveModeSpinner,
       logSpinner,
-      speedModeSpinner;
+      speedModeSpinner,
+      cameraSpinner;
   private TextView threadsTextView, voltageTextView, speedTextView, sonarTextView;
   private Model model = Model.DETECTOR_V1_1_0_Q;
   private Device device = Device.CPU;
@@ -185,6 +189,7 @@ public abstract class CameraActivity extends AppCompatActivity
   private final String voice = "matthew";
 
   protected static Vehicle vehicle = new Vehicle();
+  private List<String> cameraIds = new ArrayList<>();
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -203,6 +208,7 @@ public abstract class CameraActivity extends AppCompatActivity
     } else {
       requestCameraPermission();
     }
+    initCameraIds();
 
     preferencesManager = new SharedPreferencesManager(this);
 
@@ -216,7 +222,7 @@ public abstract class CameraActivity extends AppCompatActivity
     sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
     bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow);
     logSwitchCompat = findViewById(R.id.logger_switch);
-    cameraSwitchCompat = findViewById(R.id.camera_toggle_switch);
+    cameraSpinner = findViewById(R.id.camera_spinner);
 
     baudRateSpinner = findViewById(R.id.baud_rate_spinner);
     ArrayAdapter<CharSequence> baudRateAdapter =
@@ -260,6 +266,12 @@ public abstract class CameraActivity extends AppCompatActivity
     controlAdapter.setDropDownViewResource(android.R.layout.simple_list_item_checked);
     speedModeSpinner.setAdapter(controlAdapter);
 
+    cameraSpinner = findViewById(R.id.camera_spinner);
+    ArrayAdapter<CharSequence> cameraAdapter = new ArrayAdapter<>(this, R.layout.spinner_item);
+    cameraAdapter.addAll(this.cameraIds);
+    cameraAdapter.setDropDownViewResource(android.R.layout.simple_list_item_checked);
+    cameraSpinner.setAdapter(cameraAdapter);
+
     ViewTreeObserver vto = gestureLayout.getViewTreeObserver();
     vto.addOnGlobalLayoutListener(
         new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -298,7 +310,8 @@ public abstract class CameraActivity extends AppCompatActivity
           }
 
           @Override
-          public void onSlide(@NonNull View bottomSheet, float slideOffset) {}
+          public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+          }
         });
 
     voltageTextView = findViewById(R.id.voltage_info);
@@ -313,7 +326,7 @@ public abstract class CameraActivity extends AppCompatActivity
     connectionSwitchCompat.setOnCheckedChangeListener(this);
     networkSwitchCompat.setOnCheckedChangeListener(this);
     logSwitchCompat.setOnCheckedChangeListener(this);
-    cameraSwitchCompat.setOnCheckedChangeListener(this);
+
 
     plusImageView.setOnClickListener(this);
     minusImageView.setOnClickListener(this);
@@ -325,7 +338,7 @@ public abstract class CameraActivity extends AppCompatActivity
     controlModeSpinner.setOnItemSelectedListener(this);
     driveModeSpinner.setOnItemSelectedListener(this);
     speedModeSpinner.setOnItemSelectedListener(this);
-
+    cameraSpinner.setOnItemSelectedListener(this);
     // Intent for sensor service
     intentSensorService = new Intent(this, SensorService.class);
 
@@ -385,10 +398,18 @@ public abstract class CameraActivity extends AppCompatActivity
     localBroadcastManager.registerReceiver(localBroadcastReceiver, localIntentFilter);
   }
 
+  protected void initCameraIds() {
+    final CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+    try {
+      Collections.addAll(cameraIds, manager.getCameraIdList());
+    } catch (CameraAccessException e) {
+      e.printStackTrace();
+    }
+  }
+
   @SuppressLint("SetTextI18n")
   private void setInitialValues() {
-    cameraSwitchCompat.setChecked(preferencesManager.getCameraSwitch());
-
+    cameraSpinner.setSelection(this.cameraIds.indexOf(preferencesManager.getCameraId()));
     baudRateSpinner.setSelection(Arrays.binarySearch(BaudRates, preferencesManager.getBaudrate()));
     modelSpinner.setSelection(preferencesManager.getModel());
     deviceSpinner.setSelection(preferencesManager.getDevice());
@@ -418,7 +439,9 @@ public abstract class CameraActivity extends AppCompatActivity
     return yuvBytes[0];
   }
 
-  /** Callback for android.hardware.Camera API */
+  /**
+   * Callback for android.hardware.Camera API
+   */
   @Override
   public void onPreviewFrame(final byte[] bytes, final Camera camera) {
     if (isProcessingFrame) {
@@ -463,7 +486,9 @@ public abstract class CameraActivity extends AppCompatActivity
     processImage();
   }
 
-  /** Callback for Camera2 API */
+  /**
+   * Callback for Camera2 API
+   */
   @Override
   public void onImageAvailable(final ImageReader reader) {
     // We need wait until we have some size from onPreviewSizeChosen
@@ -667,27 +692,27 @@ public abstract class CameraActivity extends AppCompatActivity
 
   private void requestCameraPermission() {
     ActivityCompat.requestPermissions(
-        this, new String[] {PERMISSION_CAMERA}, REQUEST_CAMERA_PERMISSION);
+        this, new String[]{PERMISSION_CAMERA}, REQUEST_CAMERA_PERMISSION);
   }
 
   private void requestLocationPermissionLogging() {
     ActivityCompat.requestPermissions(
-        this, new String[] {PERMISSION_LOCATION}, REQUEST_LOCATION_PERMISSION_LOGGING);
+        this, new String[]{PERMISSION_LOCATION}, REQUEST_LOCATION_PERMISSION_LOGGING);
   }
 
   private void requestLocationPermissionController() {
     ActivityCompat.requestPermissions(
-        this, new String[] {PERMISSION_LOCATION}, REQUEST_LOCATION_PERMISSION_CONTROLLER);
+        this, new String[]{PERMISSION_LOCATION}, REQUEST_LOCATION_PERMISSION_CONTROLLER);
   }
 
   private void requestStoragePermission() {
     ActivityCompat.requestPermissions(
-        this, new String[] {PERMISSION_STORAGE}, REQUEST_STORAGE_PERMISSION);
+        this, new String[]{PERMISSION_STORAGE}, REQUEST_STORAGE_PERMISSION);
   }
 
   private void requestBluetoothPermission() {
     ActivityCompat.requestPermissions(
-        this, new String[] {PERMISSION_BLUETOOTH}, REQUEST_BLUETOOTH_PERMISSION);
+        this, new String[]{PERMISSION_BLUETOOTH}, REQUEST_BLUETOOTH_PERMISSION);
   }
 
   // Returns true if the device supports the required hardware level, or better.
@@ -701,9 +726,13 @@ public abstract class CameraActivity extends AppCompatActivity
     return requiredLevel <= deviceLevel;
   }
 
-  private String chooseCamera(int facingSelection) {
+  private String chooseCamera(String chosenCameraId) {
     final CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+
     try {
+      if (chosenCameraId != null) {
+        return chosenCameraId;
+      }
       for (final String cameraId : manager.getCameraIdList()) {
         final CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
 
@@ -714,7 +743,7 @@ public abstract class CameraActivity extends AppCompatActivity
                 + characteristics.get(CameraCharacteristics.LENS_FACING));
         // We don't use a front facing camera in this sample.
         final Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-        if (facing != null && facing != facingSelection) {
+        if (facing != null && facing != CameraSelector.LENS_FACING_BACK) {
           continue;
         }
 
@@ -745,7 +774,6 @@ public abstract class CameraActivity extends AppCompatActivity
   }
 
   protected void setFragment() {
-    cameraSelection = getCameraUserSelection();
     String cameraId = chooseCamera(cameraSelection);
     Fragment fragment;
     if (useCamera2API) {
@@ -768,7 +796,7 @@ public abstract class CameraActivity extends AppCompatActivity
     } else {
       fragment =
           new LegacyCameraConnectionFragment(
-              this, getLayoutId(), getDesiredPreviewFrameSize(), cameraSelection);
+              this, getLayoutId(), getDesiredPreviewFrameSize(), CameraSelector.LENS_FACING_BACK);
     }
 
     getFragmentManager().beginTransaction().replace(R.id.container, fragment).commit();
@@ -807,24 +835,6 @@ public abstract class CameraActivity extends AppCompatActivity
         return 90;
       default:
         return 0;
-    }
-  }
-
-  protected int getCameraUserSelection() {
-    // during initialisation there is no cameraToggle so we assume default
-    if (this.cameraSwitchCompat == null) {
-      this.cameraSelection = CameraCharacteristics.LENS_FACING_BACK;
-    } else {
-      this.cameraSelection = this.cameraSwitchCompat.isChecked() ? 0 : 1;
-    }
-    return this.cameraSelection;
-  }
-
-  protected void setCameraSwitchText() {
-    if (this.cameraSelection == CameraCharacteristics.LENS_FACING_BACK) {
-      cameraSwitchCompat.setText(R.string.camera_facing_back);
-    } else {
-      cameraSwitchCompat.setText(R.string.camera_facing_front);
     }
   }
 
@@ -1166,12 +1176,11 @@ public abstract class CameraActivity extends AppCompatActivity
     usbConnected = false;
   }
 
-  protected void toggleCamera(boolean isChecked) {
-    LOGGER.d("Camera Toggled to " + isChecked);
-    this.cameraSelection = getCameraUserSelection();
-    this.setCameraSwitchText();
+  protected void changeCamera(String cameraSelection) {
+    LOGGER.d("Camera Toggled to " + cameraSelection);
+    this.cameraSelection = cameraSelection;
     this.setFragment();
-    preferencesManager.setCameraSwitch(isChecked);
+    preferencesManager.setCamera(cameraSelection);
   }
 
   protected void toggleConnection(boolean isChecked) {
@@ -1243,8 +1252,6 @@ public abstract class CameraActivity extends AppCompatActivity
       setNetworkEnabled(isChecked);
     } else if (buttonView == logSwitchCompat) {
       setIsLoggingActive(isChecked);
-    } else if (buttonView == cameraSwitchCompat) {
-      toggleCamera(isChecked);
     }
   }
 
@@ -1281,6 +1288,8 @@ public abstract class CameraActivity extends AppCompatActivity
       setDriveMode(driveMode);
     } else if (parent == speedModeSpinner) {
       setSpeedMode(SpeedMode.valueOf(parent.getItemAtPosition(pos).toString().toUpperCase()));
+    } else if (parent == cameraSpinner) {
+      changeCamera(parent.getItemAtPosition(pos).toString());
     }
   }
 
