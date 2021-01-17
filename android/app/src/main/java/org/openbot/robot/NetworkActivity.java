@@ -18,6 +18,7 @@ limitations under the License.
 package org.openbot.robot;
 
 import static android.widget.Toast.*;
+import static org.openbot.common.Enums.DriveMode.WII;
 
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -36,13 +37,16 @@ import android.util.TypedValue;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+
 import org.openbot.R;
+import org.openbot.common.Enums;
 import org.openbot.common.Enums.ControlMode;
 import org.openbot.common.Enums.LogMode;
 import org.openbot.customview.OverlayView;
@@ -426,11 +430,17 @@ public class NetworkActivity extends CameraActivity implements OnImageAvailableL
     return super.dispatchGenericMotionEvent(event);
   }
 
+  Enums.DriveMode mode = WII; //TODO FD
+
   @Override
   public boolean dispatchKeyEvent(KeyEvent event) {
     // Check that the event came from a game controller
     if ((event.getSource() & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD
         && controlMode == ControlMode.GAMEPAD) {
+      if (mode == WII) {//TODO FD
+        controllerHandler.handleDriveCommand(gameController.processButtonInput(event));
+        return true;
+      }
       // Only handle key once (when released)
       if (event.getAction() == KeyEvent.ACTION_UP) {
         switch (event.getKeyCode()) {

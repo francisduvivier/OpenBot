@@ -6,6 +6,7 @@ import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.widget.Toast;
+
 import org.openbot.common.Enums.DriveMode;
 import org.openbot.robot.CameraActivity;
 
@@ -50,34 +51,33 @@ public class GameController {
     return 0;
   }
 
-  public void processButtonInput(KeyEvent event) {
+  public Vehicle.Control processButtonInput(KeyEvent event) {
     switch (event.getKeyCode()) {
       case KeyEvent.KEYCODE_BUTTON_A:
         Toast.makeText(CameraActivity.getContext(), "A recognized", Toast.LENGTH_SHORT).show();
-        return;
+        break;
       case KeyEvent.KEYCODE_BUTTON_B:
         Toast.makeText(CameraActivity.getContext(), "B recognized", Toast.LENGTH_SHORT).show();
-        return;
+        break;
       case KeyEvent.KEYCODE_BUTTON_Y:
         Toast.makeText(CameraActivity.getContext(), "Y recognized", Toast.LENGTH_SHORT).show();
-        return;
+        break;
       case KeyEvent.KEYCODE_BUTTON_X:
         Toast.makeText(CameraActivity.getContext(), "X recognized", Toast.LENGTH_SHORT).show();
-        return;
+        break;
       case KeyEvent.KEYCODE_BUTTON_L1:
         Toast.makeText(CameraActivity.getContext(), "L1 recognized", Toast.LENGTH_SHORT).show();
-        return;
+        break;
       case KeyEvent.KEYCODE_BUTTON_R1:
         Toast.makeText(CameraActivity.getContext(), "R1 recognized", Toast.LENGTH_SHORT).show();
-        return;
+        break;
       default:
-        Toast.makeText(
-                CameraActivity.getContext(),
-                "Key " + event.getKeyCode() + " not recognized",
-                Toast.LENGTH_SHORT)
-            .show();
-        return;
+        left = 0;
+        right = 0;
+        break;
     }
+
+    return new Vehicle.Control(left, right);
   }
 
   public Vehicle.Control processJoystickInput(MotionEvent event, int historyPos) {
@@ -162,7 +162,12 @@ public class GameController {
         }
 
         break;
-
+      case WII:
+        y_axis = getCenteredAxis(event, inputDevice, MotionEvent.AXIS_HAT_Y, historyPos);
+        x_axis = getCenteredAxis(event, inputDevice, MotionEvent.AXIS_HAT_X, historyPos);
+        left = -x_axis + y_axis;
+        right = x_axis + y_axis;
+        break;
       default:
         left = 0;
         right = 0;

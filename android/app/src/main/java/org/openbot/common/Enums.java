@@ -53,7 +53,8 @@ public class Enums {
   public enum DriveMode {
     DUAL(0),
     GAME(1),
-    JOYSTICK(2);
+    JOYSTICK(2),
+    WII(3);
 
     private final int value;
 

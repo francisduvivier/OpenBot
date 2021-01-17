@@ -71,6 +71,9 @@ public class AudioPlayer {
       case JOYSTICK:
         play(voice, "joystick_control.mp3");
         break;
+      case WII:
+        play(voice, "wii_control.mp3");
+        break;
     }
   }
 
